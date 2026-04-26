@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
+const API = "https://puzzle-game-1-8dwl.onrender.com"
+
 const size = ref(3)
 const board = ref([])
 const moves = ref(0)
@@ -30,7 +32,7 @@ function startGame(level) {
   loadScores()
 }
 
-/* 🔙 BACK TO MENU */
+/* 🔙 BACK */
 function backToMenu() {
   clearInterval(timer)
   gameStarted.value = false
@@ -98,6 +100,7 @@ function win() {
   clearInterval(timer)
   gameWon.value = true
   winSound.play()
+
   submitScore()
 }
 
@@ -110,18 +113,18 @@ function startTimer() {
   }, 1000)
 }
 
-/* 🎯 DIFFICULTY */
+/* 🎯 DIFFICULTY (KEEP CONSISTENT) */
 function getDifficulty() {
   return size.value === 3 ? "Easy Level" :
          size.value === 4 ? "Medium Level" :
          "Hard Level"
 }
 
-/* 📤 SAVE SCORE */
+/* 📤 SAVE SCORE (FIXED + AUTO REFRESH) */
 async function submitScore() {
   if (!playerName.value) return
 
-  await fetch("http://localhost:3000/api/scores", {
+  await fetch(`${API}/api/scores`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -132,13 +135,13 @@ async function submitScore() {
     })
   })
 
-  loadScores()
+  await loadScores()   // 🔥 FIX: ensures leaderboard updates instantly
 }
 
-/* 📥 LEADERBOARD */
+/* 📥 LEADERBOARD (FIXED) */
 async function loadScores() {
   const res = await fetch(
-    `http://localhost:3000/api/scores?difficulty=${getDifficulty()}`
+    `${API}/api/scores?difficulty=${getDifficulty()}`
   )
   leaderboard.value = await res.json()
 }
@@ -149,14 +152,12 @@ onMounted(loadScores)
 <template>
   <div class="container">
 
-    <!-- 🏠 MENU / GAME CARD -->
     <div class="card">
 
       <h1>🧩 Puzzle Game</h1>
 
       <input v-model="playerName" placeholder="Enter your name" />
 
-      <!-- 🎯 LEVEL SELECT -->
       <div v-if="!gameStarted" class="levels">
         <p class="label">Choose Level</p>
         <button @click="startGame(3)">Easy</button>
@@ -164,13 +165,11 @@ onMounted(loadScores)
         <button @click="startGame(5)">Hard</button>
       </div>
 
-      <!-- 📊 STATS -->
       <div v-if="gameStarted" class="stats">
         <span>⏱ {{ time }}s</span>
         <span>🎯 {{ moves }} moves</span>
       </div>
 
-      <!-- 🧩 BOARD -->
       <div v-if="gameStarted && !gameWon" class="board">
         <div v-for="(row, r) in board" :key="r">
           <button v-for="(cell, c) in row"
@@ -181,19 +180,16 @@ onMounted(loadScores)
         </div>
       </div>
 
-      <!-- 🎉 WIN SCREEN -->
       <div v-if="gameWon" class="win">
         <h2>🎉 You Won!</h2>
         <p>Great job {{ playerName }}!</p>
       </div>
 
-      <!-- 🔄 BUTTONS -->
       <div v-if="gameStarted" class="actions">
         <button @click="startGame(size)">Restart</button>
         <button class="back" @click="backToMenu">Back</button>
       </div>
 
-      <!-- 🏆 LEADERBOARD -->
       <div class="leaderboard">
         <h3>🏆 Leaderboard ({{ getDifficulty() }})</h3>
 
@@ -215,7 +211,6 @@ body {
   background: #eef2f7;
 }
 
-/* 🌟 CENTER */
 .container {
   display: flex;
   justify-content: center;
@@ -223,7 +218,6 @@ body {
   min-height: 100vh;
 }
 
-/* 📦 CARD */
 .card {
   width: 360px;
   background: white;
@@ -233,14 +227,12 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* ✏️ INPUT */
 input {
   width: 90%;
   padding: 10px;
   margin: 10px 0;
 }
 
-/* 🎯 LEVELS */
 .levels {
   margin: 15px 0;
 }
@@ -249,7 +241,6 @@ input {
   font-weight: bold;
 }
 
-/* 🔘 BUTTONS */
 button {
   margin: 5px;
   padding: 10px;
@@ -264,21 +255,18 @@ button:hover {
   background: #43a047;
 }
 
-/* 📊 STATS */
 .stats {
   display: flex;
   justify-content: space-between;
   font-weight: bold;
 }
 
-/* 🧩 BOARD */
 .board button {
   width: 60px;
   height: 60px;
   font-size: 18px;
 }
 
-/* 🔄 ACTIONS */
 .actions {
   margin-top: 10px;
 }
@@ -287,7 +275,6 @@ button:hover {
   background: #f44336;
 }
 
-/* 🎉 WIN */
 .win {
   padding: 20px;
   background: #e8f5e9;
@@ -295,7 +282,6 @@ button:hover {
   margin: 10px 0;
 }
 
-/* 🏆 LEADERBOARD */
 ul {
   list-style: none;
   padding: 0;
